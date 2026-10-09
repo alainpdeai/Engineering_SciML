@@ -1,0 +1,43 @@
+{
+  "dim_check": {
+    "alpha": {
+      "dims": [
+        0,
+        2,
+        -1,
+        0
+      ],
+      "expected": [
+        0,
+        2,
+        -1,
+        0
+      ],
+      "pass": true
+    },
+    "c": {
+      "dims": [
+        0.0,
+        1.0,
+        -1.0,
+        0.0
+      ],
+      "expected": [
+        0.0,
+        1.0,
+        -1.0,
+        0.0
+      ],
+      "pass": true
+    }
+  },
+  "analytical_residual": {
+    "heat_kernel_residual": "0",
+    "dalembert_residual": "0",
+    "discriminant": {
+      "heat": "0",
+      "wave": "4*c**2",
+      "Laplace": "-4"
+    }
+  }
+}
