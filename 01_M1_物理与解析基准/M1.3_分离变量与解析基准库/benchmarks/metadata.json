@@ -1,0 +1,97 @@
+{
+  "unit": "M1.3",
+  "title": "分离变量与解析基准库",
+  "tier": "T0",
+  "gate_milestone": "G1",
+  "gate_description": "解析基准库验收: 提交 benchmarks/ 中标准解析解、适定性判断与参数预测验证",
+  "course_group": "工程物理场 AI 科学计算课程组",
+  "version": "3.0.0",
+  "benchmarks": [
+    {
+      "id": "heat_1d_square_wave",
+      "name": "一维热传导方波初温分离变量解析解",
+      "file": "benchmarks/heat_1d_square_wave.py",
+      "pde_type": "parabolic",
+      "equation": "u_t = alpha * u_xx",
+      "domain": {
+        "x": [0.0, 1.0],
+        "boundary_conditions": {
+          "x=0": "Dirichlet u=0",
+          "x=L": "Dirichlet u=0"
+        }
+      },
+      "parameters": {
+        "L": 1.0,
+        "alpha": 1.0,
+        "default_N": 51
+      },
+      "initial_condition": "u(x,0) = +1 for x in (0, 0.5), -1 for x in (0.5, 1.0)",
+      "series_expansion": {
+        "basis": "sin(n * pi * x / L)",
+        "non_zero_modes": "n == 4k + 2 (n=2, 6, 10, ...)",
+        "coefficients": "b_n = 8.0 / (n * pi)",
+        "time_factor": "exp(-alpha * (n * pi / L)^2 * t)"
+      },
+      "verification_metrics": {
+        "away_region_max_error_t0": {
+          "definition": "t=0 时远离跳变点的最大误差, 评价区 |x-0.5|>0.03 且 0.03<x<0.97",
+          "N=3": 0.7614,
+          "N=11": 0.3280,
+          "N=51": 0.0982
+        },
+        "gibbs_overshoot_abs_t0": {
+          "definition": "跳变点左侧最大超调(跳跃幅度 = 2)的绝对值, 20001 点均匀网格",
+          "N=3": 0.2732,
+          "N=11": 0.1884,
+          "N=51": 0.1795,
+          "N=201": 0.1790,
+          "N=501": 0.1790
+        },
+        "exponential_convergence_t001": {
+          "N=3": 1.216e-2,
+          "N=6": 1.317e-5,
+          "N=11": 7.222e-10
+        },
+        "energy_decay_profile": {
+          "t=0.00": 1.9838,
+          "t=0.05": 0.0313
+        }
+      }
+    },
+    {
+      "id": "wave_string_modes",
+      "name": "一维波动方程固定端三角拨弦解析驻波",
+      "file": "benchmarks/wave_string_modes.py",
+      "pde_type": "hyperbolic",
+      "equation": "u_tt = c^2 * u_xx",
+      "domain": {
+        "x": [0.0, 1.0],
+        "boundary_conditions": {
+          "x=0": "Dirichlet u=0",
+          "x=L": "Dirichlet u=0"
+        }
+      },
+      "parameters": {
+        "L": 1.0,
+        "c": 1.0,
+        "plucked_ratio_x0": 0.3,
+        "default_N": 40
+      },
+      "initial_condition": "Triangular plucked displacement at x0=0.3*L with height h=1.0, u_t(x,0)=0",
+      "series_expansion": {
+        "basis": "sin(n * pi * x / L)",
+        "frequency": "omega_n = n * pi * c / L",
+        "coefficients": "a_n = (2 * L^2) / (n^2 * pi^2 * x0 * (L - x0)) * sin(n * pi * x0 / L)"
+      },
+      "verification_metrics": {
+        "exact_modal_energy": 2.352244,
+        "discrete_quadrature_energy_range": [2.352228, 2.352256],
+        "max_relative_energy_drift": 6.95e-6,
+        "max_relative_energy_drift_definition": "max_t |E(t) - E*| / E*, E* 为 N=40 闭式模态能量",
+        "discrete_energy_span": 2.794e-5,
+        "discrete_energy_span_ratio": 1.19e-5,
+        "conservation_status": "strictly conserved (偏差来自数值微分与求积舍入, 无物理耗散)"
+      }
+    }
+  ]
+}
