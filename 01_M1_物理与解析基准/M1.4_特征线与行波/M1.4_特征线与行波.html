@@ -877,8 +877,46 @@ err = np.<span class="tk-b">max</span>(np.<span class="tk-b">abs</span>(U[-<span
 <span class="tk-b">print</span>(f<span class="tk-s">"L∞ 误差 = {err:.3e}"</span>)                <span class="tk-c"># 本机实测 1.9e-04</span></code></pre><textarea aria-label="Python 代码，可编辑" spellcheck="false" wrap="off"></textarea></div>
 <script class="cell-src" type="text/plain">import numpy as np
 import matplotlib.pyplot as plt
-from benchmarks.characteristics_wave import (
-    characteristic_feet, d_alembert, gaussian_pulse, leapfrog_wave, pde_residual)
+# Standalone demo helpers: no project package or filesystem lookup is required.
+def characteristic_feet(x0, t, c):
+    return x0 - c * t, x0 + c * t
+
+def gaussian_pulse(x, center=0.0, width=0.05):
+    x = np.asarray(x, dtype=float)
+    return np.exp(-((x - center) / width) ** 2)
+
+def d_alembert(x, t, f, c=1.0):
+    x = np.asarray(x, dtype=float)
+    return 0.5 * (f(x - c * t) + f(x + c * t))
+
+def leapfrog_wave(x, t_end, c, cfl=0.9, f=None):
+    x = np.asarray(x, dtype=float)
+    if f is None:
+        f = lambda z: np.zeros_like(z, dtype=float)
+    dx = float(x[1] - x[0])
+    nt = max(1, int(round(t_end / (cfl * dx / c))))
+    dt = t_end / nt
+    nu2 = (c * dt / dx) ** 2
+    u0 = np.asarray(f(x), dtype=float).copy()
+    u1 = u0.copy()
+    u1[1:-1] += 0.5 * nu2 * (u0[2:] - 2.0 * u0[1:-1] + u0[:-2])
+    u1[0] = u1[-1] = 0.0
+    U = [u0, u1]
+    for _ in range(nt - 1):
+        prev, cur = U[-2:]
+        nxt = np.empty_like(cur)
+        nxt[1:-1] = 2.0 * cur[1:-1] - prev[1:-1] + nu2 * (cur[2:] - 2.0 * cur[1:-1] + cur[:-2])
+        nxt[0] = nxt[-1] = 0.0
+        U.append(nxt)
+    return np.arange(len(U)) * dt, np.asarray(U), dt
+
+def pde_residual(x, t, u_func, c, dx=1e-3, dt=1e-3):
+    u = lambda xx, tt: np.asarray(u_func(xx, tt), dtype=float)
+    utt = (u(x, t + dt) - 2.0 * u(x, t) + u(x, t - dt)) / dt**2
+    uxx = (u(x + dx, t) - 2.0 * u(x, t) + u(x - dx, t)) / dx**2
+    return float(np.max(np.abs(utt - c**2 * uxx)))
+
+# Keep this HTML lab runnable offline; no benchmarks package import.
 
 c, t = 1.0, 0.8
 x0 = -1.0                                    # 脉冲中心 = 目标点
